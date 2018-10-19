@@ -45,6 +45,8 @@ int main(int argc, char** argv) {
         // Break input down into tokens
         char *token;
         token = strtok(buffer, " \n");
+        if(strcmp(token, "exit") == 0)
+            break;
         int i = 0; // For iterating through args
         while (token != NULL) {
             args[i++] = token;
