@@ -11,18 +11,23 @@ char buffer[BUFFER_SIZE];
 #define MAX_LINE  80 /* 80 chars per line, per command */
 #define HISTORY_SIZE 10
 int historyPointer = 0;
-char history[BUFFER_SIZE][HISTORY_SIZE];
+char *history[BUFFER_SIZE];
 bool parentwait = true;
+
+void print_history() {
+    for (int i = 0; i < HISTORY_SIZE; i++) {
+        if (history[i] != NULL)
+            printf("\n%s", history[i]);
+    }
+    printf("\n");
+}
 
 void handle_SIGINT() {
     //TODO - Print History
     fflush(stdin);
     *buffer = ""; // clear buffer so it doesn't try to run previous input automatically
-    printf("\nPrint the History\n");
-}
-
-void print_history() {
-    //print history
+    print_history();
+    historyPointer--;
 }
 
 int main(int argc, char** argv) {
@@ -42,34 +47,46 @@ int main(int argc, char** argv) {
 
         printf("osh>");
         fgets(buffer, BUFFER_SIZE, stdin);
+        int s = 0;
+        if (buffer[s] == ' ') {
+            printf("Do not begin with a space\n");
+            continue;
+        }
+        if (strcmp(buffer, "\n") == 0)
+            continue;
         // Break input down into tokens
         char *token;
         token = strtok(buffer, " \n");
-        if(strcmp(token, "exit") == 0)
+        if (strcmp(token, "exit") == 0 || strcmp(token, "EXIT") == 0)
             break;
         int i = 0; // For iterating through args
         while (token != NULL) {
             args[i++] = token;
             token = strtok(NULL, " \n");
         }
-        args[i] = NULL; //args needs to end with a null character
-        if (args[i - 1] == "&") {
+        // Set to null and tell program to not wait on child
+        if (*args[i - 1] == '&') {
+            args[i - 1] = NULL;
             parentwait = false;
+        } else {
+            args[i] = NULL; //args needs to end with a null character
         }
-
         pid_t pid = fork();
         if (pid < 0) {
             perror("Forking error");
-            exit(2);
+            exit(-1);
         }
         if (pid == 0) {
             execvp(args[0], args);
-            *history[historyPointer] = args;
-            exit(0);
+            exit(3);
         } else if (pid > 0) {
             int status;
-            if(parentwait)
-                wait(&status); // gets status of child       
+            if (parentwait)
+                wait(&status); // gets status of child    
+            else {
+                parentwait = true;
+                continue;
+            }
         }
     }
     return 0;
