@@ -83,7 +83,6 @@ int main(int argc, char** argv) {
                 wait(&status); // gets status of child
             else {
                 parentwait = true;
-                continue;
             }
         }
     }
