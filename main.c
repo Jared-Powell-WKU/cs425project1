@@ -14,12 +14,12 @@ int historyPointer = 0;
 char *history[BUFFER_SIZE];
 bool parentwait = true;
 
+void print_array(char arr[]) {
+
+}
+
 void print_history() {
-    for (int i = 0; i < HISTORY_SIZE; i++) {
-        if (history[i] != NULL)
-            printf("\n%s", history[i]);
-    }
-    printf("\n");
+
 }
 
 void handle_SIGINT() {
@@ -27,7 +27,6 @@ void handle_SIGINT() {
     fflush(stdin);
     *buffer = ""; // clear buffer so it doesn't try to run previous input automatically
     print_history();
-    historyPointer--;
 }
 
 int main(int argc, char** argv) {
@@ -41,15 +40,13 @@ int main(int argc, char** argv) {
     char *args[MAX_LINE / 2 + 1]; /* command line (of 80) has max of 40 arguments */
     int should_run = 1;
 
-    int i;
-
     while (should_run) {
 
         printf("osh>");
         fgets(buffer, BUFFER_SIZE, stdin);
-        int s = 0;
-        if (buffer[s] == ' ') {
-            printf("Do not begin with a space\n");
+        // Too many bugs if allowing to start with space
+        if (buffer[0] == ' ') {
+            printf("Currently not supporting beginning line with a space\n");
             continue;
         }
         if (strcmp(buffer, "\n") == 0)
@@ -64,6 +61,7 @@ int main(int argc, char** argv) {
             args[i++] = token;
             token = strtok(NULL, " \n");
         }
+
         // Set to null and tell program to not wait on child
         if (*args[i - 1] == '&') {
             args[i - 1] = NULL;
@@ -78,11 +76,11 @@ int main(int argc, char** argv) {
         }
         if (pid == 0) {
             execvp(args[0], args);
-            exit(3);
+            _Exit(0);
         } else if (pid > 0) {
             int status;
             if (parentwait)
-                wait(&status); // gets status of child    
+                wait(&status); // gets status of child
             else {
                 parentwait = true;
                 continue;
