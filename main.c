@@ -11,18 +11,22 @@ char buffer[BUFFER_SIZE];
 #define MAX_LINE  80 /* 80 chars per line, per command */
 #define HISTORY_SIZE 10
 int historyPointer = 0;
-char history[HISTORY_SIZE];
+char history[HISTORY_SIZE][MAX_LINE];
 bool parentwait = true;
+bool sighand = false;
 
+void print_history() {
+    for(int i = 0; i < historyPointer; i++) {
+        printf("%s", history[i]);
+    }
+}
 void handle_SIGINT() {
     //TODO - Print History
     fflush(stdin);
     *buffer = ""; // clear buffer so it doesn't try to run previous input automatically
-    printf("\nPrint the History\n");
-}
-
-void print_history() {
-    //print history
+    printf("\n");
+    print_history();
+    sighand = true;
 }
 
 int main(int argc, char** argv) {
@@ -42,6 +46,15 @@ int main(int argc, char** argv) {
 
         printf("osh>");
         fgets(buffer, BUFFER_SIZE, stdin);
+        
+        //Add to history
+        if(!sighand) {
+            strcpy(history[historyPointer], buffer);
+        historyPointer++;
+        } else {
+            sighand = false;
+        }
+        
         // Break input down into tokens
         char *token;
         token = strtok(buffer, " \n");
@@ -61,18 +74,18 @@ int main(int argc, char** argv) {
         pid_t pid = fork();
         if (pid < 0) {
             perror("Forking error");
-            exit(2);
+            _exit(2);
         }
         if (pid == 0) {
             execvp(args[0], args);
-            exit(0);
+            _exit(0);
         } else if (pid > 0) {
             int status;
             if (parentwait)
                 wait(&status); // gets status of child    
             else
                 parentwait = true; // Parent doesn't wait
-        }
+        }              
     }
     return 0;
 }
