@@ -10,23 +10,37 @@
 char buffer[BUFFER_SIZE];
 #define MAX_LINE  80 /* 80 chars per line, per command */
 #define HISTORY_SIZE 10
-int historyPointer = 0;
 char history[HISTORY_SIZE][MAX_LINE];
 bool parentwait = true;
-bool sighand = false;
+bool savetohistory = true;
 
 void print_history() {
-    for(int i = 0; i < historyPointer; i++) {
-        printf("%s", history[i]);
+    if (strcmp(history[0], "") == 0)
+        printf("No commands have been ran yet\n");
+    else {
+        for (int i = 0; i < HISTORY_SIZE; i++) {
+            if (strcmp(history[i], "") != 0)
+                printf("%d. %s", (i + 1), history[i]);
+        }
     }
 }
+
+void add_to_history() {
+    if (history[HISTORY_SIZE - 1] != NULL)
+        history[HISTORY_SIZE - 1] == NULL;
+    for (int i = HISTORY_SIZE - 1; i >= 1; i--) {
+        strcpy(history[i], history[i - 1]);
+    }
+    strcpy(history[0], buffer);
+}
+
 void handle_SIGINT() {
     //TODO - Print History
     fflush(stdin);
     *buffer = ""; // clear buffer so it doesn't try to run previous input automatically
     printf("\n");
     print_history();
-    sighand = true;
+    savetohistory = false;
 }
 
 int main(int argc, char** argv) {
@@ -40,24 +54,37 @@ int main(int argc, char** argv) {
     char *args[MAX_LINE / 2 + 1]; /* command line (of 80) has max of 40 arguments */
     int should_run = 1;
 
-    int i;
-
     while (should_run) {
 
         printf("osh>");
         fgets(buffer, BUFFER_SIZE, stdin);
-        
+
         //Add to history
-        if(!sighand) {
-            strcpy(history[historyPointer], buffer);
-        historyPointer++;
+        if (buffer[0] == 'r')
+            if (buffer[1] == ' ') {
+                int i;
+                for(i = 0; i <= HISTORY_SIZE; i++) {
+                    if(buffer[2] == history[i][0]) {
+                        strcpy(buffer, history[i]);
+                        break;
+                    }
+                }
+                if(i > HISTORY_SIZE)
+                    printf("No recent commands with that first letter\n");
+            } else {
+                strcpy(buffer, history[0]);
+            }
+        if (savetohistory) {
+            add_to_history();
         } else {
-            sighand = false;
+            savetohistory = true;
         }
-        
         // Break input down into tokens
         char *token;
         token = strtok(buffer, " \n");
+        if (token == NULL) {
+            continue;
+        }
         int i = 0; // For iterating through args
         while (token != NULL) {
             args[i++] = token;
@@ -85,7 +112,7 @@ int main(int argc, char** argv) {
                 wait(&status); // gets status of child    
             else
                 parentwait = true; // Parent doesn't wait
-        }              
+        }
     }
     return 0;
 }
