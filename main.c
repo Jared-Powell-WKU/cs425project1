@@ -63,13 +63,13 @@ int main(int argc, char** argv) {
         if (buffer[0] == 'r')
             if (buffer[1] == ' ') {
                 int i;
-                for(i = 0; i <= HISTORY_SIZE; i++) {
-                    if(buffer[2] == history[i][0]) {
+                for (i = 0; i <= HISTORY_SIZE; i++) {
+                    if (buffer[2] == history[i][0]) {
                         strcpy(buffer, history[i]);
                         break;
                     }
                 }
-                if(i > HISTORY_SIZE)
+                if (i > HISTORY_SIZE)
                     printf("No recent commands with that first letter\n");
             } else {
                 strcpy(buffer, history[0]);
@@ -84,6 +84,9 @@ int main(int argc, char** argv) {
         token = strtok(buffer, " \n");
         if (token == NULL) {
             continue;
+        } else if (strcmp(token, "exit") == 0) {
+            should_run = 0;
+            break;
         }
         int i = 0; // For iterating through args
         while (token != NULL) {
